@@ -22,7 +22,7 @@ app.config['SWAGGER'] = {
 
 app.config["SECRET_KEY"] = os.getenv("SECRET_KEY")
 
-CORS(app, origins="*")
+CORS(app, origins=["https://api-charada-mocha.vercel.app/"])
 
 ADM_USUARIO = os.getenv("ADM_USUARIO")
 ADM_SENHA = os.getenv("ADM_SENHA")
