@@ -1,0 +1,466 @@
+openapi: 3.0.3
+
+info:
+  title: API de Charadas
+  version: 1.0.0
+  description: |
+    API para gerenciamento de charadas com autenticação JWT.
+    
+    Permite:
+    - listar charadas
+    - buscar charada aleatória
+    - buscar charada por ID
+    - adicionar charadas
+    - editar charadas
+    - excluir charadas
+    - autenticar administrador
+
+servers:
+  - url: http://127.0.0.1:5000
+    description: Servidor local
+  - url: https://sua-api.vercel.app
+    description: Produção (exemplo)
+
+tags:
+  - name: Root
+    description: Informações básicas da API
+  - name: Auth
+    description: Autenticação
+  - name: Charadas
+    description: Operações com charadas
+
+paths:
+  /:
+    get:
+      tags:
+        - Root
+      summary: Rota principal da API
+      description: Retorna informações básicas da API.
+      responses:
+        '200':
+          description: Informações da API
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  api:
+                    type: string
+                    example: Charadas
+                  version:
+                    type: string
+                    example: "1.0"
+                  autor:
+                    type: string
+                    example: Pedro V
+
+  /login:
+    post:
+      tags:
+        - Auth
+      summary: Login do administrador
+      description: Autentica o usuário administrador e retorna um token JWT.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+            examples:
+              exemplo:
+                value:
+                  usuario: admin
+                  senha: 123456
+      responses:
+        '200':
+          description: Login realizado com sucesso
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Login realizado com sucesso!
+                  token:
+                    type: string
+                    example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        '400':
+          description: Dados inválidos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                semDados:
+                  value:
+                    error: Envie os dados para login!
+                camposObrigatorios:
+                  value:
+                    error: Usuário e senha são obrigatórios!
+        '401':
+          description: Credenciais inválidas
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: Usuário ou senha inválidos
+
+  /charadas:
+    get:
+      tags:
+        - Charadas
+      summary: Listar todas as charadas
+      description: Retorna a lista completa de charadas cadastradas.
+      responses:
+        '200':
+          description: Lista de charadas
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Charada'
+              examples:
+                exemplo:
+                  value:
+                    - id: 1
+                      pergunta: O que é o que é tem boca, mas não fala?
+                      resposta: O rio
+                    - id: 2
+                      pergunta: O que sobe e desce mas nunca sai do lugar?
+                      resposta: A escada
+
+    post:
+      tags:
+        - Charadas
+      summary: Adicionar nova charada
+      description: Cria uma nova charada. Requer autenticação JWT.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CharadaInput'
+            examples:
+              exemplo:
+                value:
+                  pergunta: O que é o que é, quanto mais tira mais aumenta?
+                  resposta: O buraco
+      responses:
+        '201':
+          description: Charada adicionada com sucesso
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Charada adicionada com sucesso!
+        '400':
+          description: Dados incompletos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: Dados incompletos!
+        '401':
+          description: Token ausente ou inválido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Erro interno ao salvar charada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /charadas/aleatoria:
+    get:
+      tags:
+        - Charadas
+      summary: Buscar charada aleatória
+      description: Retorna uma charada aleatória cadastrada no banco.
+      responses:
+        '200':
+          description: Charada aleatória retornada com sucesso
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Charada'
+              example:
+                id: 1
+                pergunta: O que é o que é tem boca, mas não fala?
+                resposta: O rio
+
+  /charadas/{id}:
+    get:
+      tags:
+        - Charadas
+      summary: Buscar charada por ID
+      description: Retorna uma charada específica pelo ID.
+      parameters:
+        - $ref: '#/components/parameters/CharadaId'
+      responses:
+        '200':
+          description: Charada encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Charada'
+              example:
+                id: 1
+                pergunta: O que é o que é tem boca, mas não fala?
+                resposta: O rio
+        '404':
+          description: Charada não encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: Charada não encontrada
+
+    put:
+      tags:
+        - Charadas
+      summary: Atualizar charada completamente
+      description: Atualiza completamente uma charada existente. Requer autenticação JWT.
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/CharadaId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CharadaInput'
+            examples:
+              exemplo:
+                value:
+                  pergunta: O que é o que é, cai em pé e corre deitado?
+                  resposta: A chuva
+      responses:
+        '200':
+          description: Charada alterada com sucesso
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Charada alterada com sucesso!
+        '400':
+          description: Dados incompletos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: Dados incompletos!
+        '401':
+          description: Token ausente ou inválido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Charada não encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: Charada não encontrada!
+        '500':
+          description: Erro interno ao atualizar charada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    patch:
+      tags:
+        - Charadas
+      summary: Atualizar charada parcialmente
+      description: Atualiza apenas os campos enviados de uma charada. Requer autenticação JWT.
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/CharadaId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CharadaPatchInput'
+            examples:
+              alterarPergunta:
+                value:
+                  pergunta: O que é o que é, anda com os pés na cabeça?
+              alterarResposta:
+                value:
+                  resposta: O piolho
+      responses:
+        '200':
+          description: Charada alterada com sucesso
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Charada alterada com sucesso!
+        '400':
+          description: Dados incompletos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: Dados incompletos!
+        '401':
+          description: Token ausente ou inválido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Charada não encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: Charada não encontrada!
+        '500':
+          description: Erro interno ao atualizar charada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    delete:
+      tags:
+        - Charadas
+      summary: Excluir charada
+      description: Remove uma charada pelo ID. Requer autenticação JWT.
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/CharadaId'
+      responses:
+        '200':
+          description: Charada excluída com sucesso
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Charada excluída com sucesso!
+        '401':
+          description: Token ausente ou inválido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Charada não encontrada
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Charada não encontrada!
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    CharadaId:
+      name: id
+      in: path
+      required: true
+      description: ID numérico da charada
+      schema:
+        type: integer
+        example: 1
+
+  schemas:
+    Charada:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        pergunta:
+          type: string
+          example: O que é o que é tem boca, mas não fala?
+        resposta:
+          type: string
+          example: O rio
+      required:
+        - id
+        - pergunta
+        - resposta
+
+    CharadaInput:
+      type: object
+      properties:
+        pergunta:
+          type: string
+          example: O que é o que é, quanto mais tira mais aumenta?
+        resposta:
+          type: string
+          example: O buraco
+      required:
+        - pergunta
+        - resposta
+
+    CharadaPatchInput:
+      type: object
+      properties:
+        pergunta:
+          type: string
+          example: Nova pergunta da charada
+        resposta:
+          type: string
+          example: Nova resposta da charada
+
+    LoginRequest:
+      type: object
+      properties:
+        usuario:
+          type: string
+          example: admin
+        senha:
+          type: string
+          example: 123456
+      required:
+        - usuario
+        - senha
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          example: Mensagem de erro
