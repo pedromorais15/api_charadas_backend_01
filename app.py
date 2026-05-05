@@ -13,6 +13,7 @@ load_dotenv()
 
 app = Flask(__name__)
 
+
 # =========================
 # CONFIGURAÇÕES
 # =========================
@@ -28,7 +29,7 @@ ADM_USUARIO = os.getenv("ADM_USUARIO")
 ADM_SENHA = os.getenv("ADM_SENHA")
 
 # =========================
-# SWAGGER (CORRIGIDO)
+# SWAGGER 
 # =========================
 swagger = Swagger(
     app,
@@ -36,7 +37,7 @@ swagger = Swagger(
 )
 
 # =========================
-# FIREBASE (CORRIGIDO)
+# FIREBASE 
 # =========================
 cred_json = os.getenv("FIREBASE_CREDENTIALS")
 
